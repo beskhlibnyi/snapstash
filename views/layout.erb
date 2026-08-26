@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>KlyoVault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css?v=9">
+  </head>
+  <body class="<%= signed_in? ? "signed-in-mode" : "signed-out-mode" %> <%= "collection-mode" if request.path_info.start_with?("/packs") %>">
+    <div class="shell">
+      <header class="topbar <%= "topbar-entry" unless signed_in? %>">
+        <% if signed_in? %>
+          <div class="brand-block">
+            <a class="brand" href="/">KlyoVault</a>
+            <span class="brand-tag">Vault session active</span>
+          </div>
+
+          <div class="topbar-actions">
+            <nav class="nav">
+              <a href="/">Home</a>
+              <a href="/packs">Packs</a>
+              <% if admin_console_visible? %>
+                <a href="/admin">Admin</a>
+              <% end %>
+              <% if ENV["GOOGLE_DRIVE_FOLDER_ID"].to_s.strip != "" %>
+                <a href="https://drive.google.com/drive/folders/<%= ENV["GOOGLE_DRIVE_FOLDER_ID"] %>" target="_blank" rel="noreferrer">Folder</a>
+              <% end %>
+              <a href="/logout">Sign out</a>
+            </nav>
+
+            <div class="user-chip">
+              <% if current_user["image"].to_s != "" %>
+                <img class="user-chip-avatar" src="<%= current_user["image"] %>" alt="<%= current_user_name %>">
+              <% end %>
+              <div class="user-chip-copy">
+                <strong><%= current_user_first_name %></strong>
+                <span>Vault access active</span>
+              </div>
+            </div>
+          </div>
+        <% else %>
+          <div class="entry-header-brand">
+            <a class="brand entry-brand" href="/">
+              <span class="entry-brand-mark" aria-hidden="true"></span>
+              <span>KlyoVault</span>
+            </a>
+          </div>
+        <% end %>
+      </header>
+
+      <% if signed_in? && !request.path_info.start_with?("/packs") %>
+        <div class="user-banner">
+          <% if current_user["image"].to_s != "" %>
+            <img class="user-avatar" src="<%= current_user["image"] %>" alt="<%= current_user_name %>">
+          <% end %>
+          <div class="user-copy">
+            <strong><%= current_user_name %></strong>
+            <span><%= current_user["email"] %></span>
+          </div>
+          <div class="user-banner-status">
+            <span class="status-pill">Signed in</span>
+            <span class="status-pill status-pill-soft"><%= vault_member_count %> vault members</span>
+          </div>
+        </div>
+      <% end %>
+
+      <% flash_messages.each do |type, message| %>
+        <div class="flash-banner <%= type == "error" ? "flash-banner-error" : "flash-banner-notice" %>">
+          <strong><%= type == "error" ? "Heads up" : "Updated" %></strong>
+          <span><%= message %></span>
+        </div>
+      <% end %>
+
+      <%= yield %>
+
+      <% if signed_in? && !request.path_info.start_with?("/packs") %>
+        <footer class="footer">
+          Prototype: Google sign-in, one Google Drive folder, and one hidden winning photo.
+        </footer>
+      <% end %>
+    </div>
+  </body>
+</html>

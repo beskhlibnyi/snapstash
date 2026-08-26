@@ -1,0 +1,95 @@
+<% revealed_count = pack_revealed_count(@pack) %>
+<% pack_complete = pack_complete_for_user?(@pack) %>
+<% pack_ready = pack_ready_to_play?(@pack) %>
+
+<main class="pack-open-page">
+  <header class="pack-open-header">
+    <a href="/packs" class="pack-open-back"><span aria-hidden="true">&larr;</span> Collection</a>
+    <div class="pack-open-identity">
+      <span>#<%= @pack["primary_tag"].downcase.gsub(/[^a-z0-9]+/, "-") %></span>
+      <strong><%= @pack["label"] %></strong>
+    </div>
+    <div class="pack-open-counter">
+      <span>Found</span>
+      <strong><%= revealed_count %>/<%= @pack["count"] %></strong>
+    </div>
+  </header>
+
+  <section class="pack-open-stage">
+    <div class="pack-open-stage-copy">
+      <span class="pack-open-kicker">Pack reveal / <%= format("%02d", @pack["count"]) %> photos</span>
+      <h1>What will<br>you find?</h1>
+      <p>One reveal unlocks one random photo. Its rarity belongs to your account alone.</p>
+    </div>
+
+    <div class="pack-open-cards" aria-label="Photos in this pack">
+      <% @pack["photos"].each_with_index do |photo, index| %>
+        <% revealed = photo_revealed_in_pack?(photo, @pack) %>
+        <% if revealed %>
+          <a class="pack-reveal-card is-revealed card-<%= index + 1 %>" href="/photos/<%= photo["id"] %>?pack=<%= @pack["id"] %>">
+            <img src="<%= photo_thumbnail_url(photo) %>" alt="<%= photo_label(photo) %>" loading="lazy" referrerpolicy="no-referrer">
+            <span class="pack-reveal-card-number"><%= format("%02d", index + 1) %></span>
+            <div class="pack-reveal-card-result">
+              <span><%= photo_rarity_label(photo) || "Found" %></span>
+              <strong><%= photo_reveal_score(photo) || 0 %> pts</strong>
+            </div>
+          </a>
+        <% else %>
+          <div class="pack-reveal-card is-locked card-<%= index + 1 %>">
+            <span class="pack-reveal-card-number"><%= format("%02d", index + 1) %></span>
+            <div class="pack-reveal-lock" aria-hidden="true"><i></i></div>
+            <span class="pack-reveal-secret">Unrevealed</span>
+          </div>
+        <% end %>
+      <% end %>
+
+      <% if @pack["count"] < grouping_pack_size %>
+        <% (grouping_pack_size - @pack["count"]).times do |offset| %>
+          <div class="pack-reveal-card is-empty card-<%= @pack["count"] + offset + 1 %>">
+            <span class="pack-reveal-card-number"><%= format("%02d", @pack["count"] + offset + 1) %></span>
+            <strong>Waiting<br>for a photo</strong>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="pack-open-action">
+    <div class="pack-open-progress">
+      <span>Pack progress</span>
+      <div><i style="width: <%= @pack["count"].positive? ? (revealed_count.to_f / @pack["count"] * 100).round : 0 %>%"></i></div>
+      <strong><%= revealed_count %> of <%= @pack["count"] %> discovered</strong>
+    </div>
+
+    <div class="pack-open-action-center">
+      <% if pack_ready && !pack_complete && daily_tries_remaining.positive? %>
+        <form method="post" action="/packs/<%= @pack["id"] %>/reveal">
+          <button class="pack-open-button" type="submit">
+            <span>Spend 1 daily reveal</span>
+            <strong>Reveal a photo</strong>
+          </button>
+        </form>
+      <% elsif !pack_ready %>
+        <div class="pack-open-state">
+          <span>Pack is growing</span>
+          <strong>Waiting for <%= grouping_pack_size - @pack["count"] %> more</strong>
+        </div>
+      <% elsif pack_complete %>
+        <div class="pack-open-state is-complete">
+          <span>Pack complete</span>
+          <strong>Every photo found</strong>
+        </div>
+      <% else %>
+        <div class="pack-open-state">
+          <span>Daily limit reached</span>
+          <strong>Return tomorrow</strong>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="pack-open-tries">
+      <span>Reveals left today</span>
+      <strong><%= daily_tries_remaining %><small>/ <%= daily_tries_total %></small></strong>
+    </div>
+  </section>
+</main>

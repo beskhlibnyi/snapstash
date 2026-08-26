@@ -1,0 +1,7 @@
+.env
+.rspec_status
+
+.ruby-lsp/
+tmp/
+
+db/*.json

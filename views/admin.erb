@@ -1,0 +1,261 @@
+<% grouping_summary_data = @grouping_summary || grouping_summary(@photos || []) %>
+<% computed_tag_groups_data = @computed_tag_groups || computed_tag_groups(@photos || []) %>
+
+<section class="hero hero-stack">
+  <div class="hero-copy">
+    <span class="eyebrow">Admin</span>
+    <h1>Vault control room.</h1>
+    <p class="lede">
+      This page is just for you: a simple overview of the live Drive collection, recent sign-ins,
+      and the foundation we can later extend with AI tagging, grouping tools, and release controls.
+    </p>
+  </div>
+</section>
+
+<section class="admin-grid">
+  <article class="panel admin-main">
+    <span class="eyebrow">Collection status</span>
+    <div class="admin-stat-grid">
+      <div class="admin-stat-card">
+        <span>Total photos</span>
+        <strong><%= @photos.length %></strong>
+      </div>
+      <div class="admin-stat-card">
+        <span>Vault members</span>
+        <strong><%= vault_member_count %></strong>
+      </div>
+      <div class="admin-stat-card">
+        <span>Drive source</span>
+        <strong><%= configured? ? "Connected" : "Missing" %></strong>
+      </div>
+      <div class="admin-stat-card">
+        <span>Admin mode</span>
+        <strong><%= admin_access_label %></strong>
+      </div>
+      <div class="admin-stat-card">
+        <span>Tagged photos</span>
+        <strong><%= tagged_photo_count %></strong>
+      </div>
+      <div class="admin-stat-card">
+        <span>Tag groups</span>
+        <strong><%= grouping_summary_data["tag_group_count"] %></strong>
+      </div>
+      <div class="admin-stat-card">
+        <span>Playable packs</span>
+        <strong><%= grouping_summary_data["complete_pack_count"] %></strong>
+      </div>
+      <div class="admin-stat-card">
+        <span>OpenAI tagging</span>
+        <strong><%= tagging_configured? ? "Ready" : "Missing key" %></strong>
+      </div>
+    </div>
+
+    <div class="cta-row">
+      <a class="button button-primary" href="/">Back to lobby</a>
+      <% if ENV["GOOGLE_DRIVE_FOLDER_ID"].to_s.strip != "" %>
+        <a class="button button-secondary" href="https://drive.google.com/drive/folders/<%= ENV["GOOGLE_DRIVE_FOLDER_ID"] %>" target="_blank" rel="noreferrer">Open Drive folder</a>
+      <% end %>
+    </div>
+
+    <div class="admin-action-panel">
+      <span class="eyebrow">Generate tags</span>
+      <% if tagging_configured? %>
+        <p>
+          Run AI tagging on the next untagged photos using Drive thumbnails and save the results locally.
+        </p>
+        <form class="admin-inline-form" method="post" action="/admin/tagging/run">
+          <label for="limit">Photos this run</label>
+          <select id="limit" name="limit">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+          </select>
+          <button class="button button-primary" type="submit">Generate tags</button>
+        </form>
+      <% else %>
+        <p>
+          Add <code>OPENAI_API_KEY</code> to your local <code>.env</code> first, then this button will become usable.
+        </p>
+      <% end %>
+    </div>
+
+    <% if @admin_error %>
+      <div class="panel callout callout-error admin-inline-error">
+        <h3>Could not load admin data</h3>
+        <p><%= @admin_error %></p>
+      </div>
+    <% end %>
+
+    <% if @tag_run %>
+      <div class="panel admin-inline-result">
+        <span class="eyebrow">Last tagging run</span>
+        <p>
+          Tagged <strong><%= @tag_run[:tagged_count] %></strong> photo<%= @tag_run[:tagged_count] == 1 ? "" : "s" %>
+          in this run.
+        </p>
+        <% if @tag_run[:tagged].any? %>
+          <div class="admin-tag-run-list">
+            <% @tag_run[:tagged].each do |entry| %>
+              <article class="admin-tag-run-row">
+                <strong><%= photo_label(entry[:photo]) %></strong>
+                <div class="tag-list">
+                  <% Array(entry[:tags]["short_tags"]).each do |tag| %>
+                    <span class="tag-chip"><%= tag %></span>
+                  <% end %>
+                </div>
+              </article>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </article>
+
+  <aside class="admin-stack">
+    <div class="panel admin-note-card">
+      <span class="eyebrow">Access</span>
+      <p><%= admin_access_copy %></p>
+      <p class="hint">
+        To lock this down later, add <code>ADMIN_EMAILS</code> to your local <code>.env</code> with your Google email.
+      </p>
+    </div>
+
+    <div class="panel admin-note-card">
+      <span class="eyebrow">Next admin tools</span>
+      <div class="feature-list">
+        <div class="feature-item">
+          <strong>Generate tags</strong>
+          <span>Run AI tagging only for new photos.</span>
+        </div>
+        <div class="feature-item">
+          <strong>Review metadata</strong>
+          <span>Approve tags, tweak rarity, and override groups only when needed.</span>
+        </div>
+        <div class="feature-item">
+          <strong>Release control</strong>
+          <span>Choose which packs go live without editing code.</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+</section>
+
+<section class="admin-sections">
+  <section class="panel">
+    <div class="section-title admin-section-title">
+      <div>
+        <span class="eyebrow">Computed groups</span>
+        <h2>Tag-based group preview</h2>
+      </div>
+      <p>
+        This is the shared grouping service in action: same logic we can later reuse for pack gameplay, rarity flows, and admin overrides.
+        For now it builds packs of <strong><%= grouping_pack_size %></strong>.
+      </p>
+    </div>
+
+    <% if computed_tag_groups_data.empty? %>
+      <p class="empty">Tag a few photos first and groups will show up here.</p>
+    <% else %>
+      <div class="admin-group-grid">
+        <% computed_tag_groups_data.first(8).each do |group| %>
+          <article class="admin-group-card">
+            <div class="admin-group-head">
+              <strong><%= group["label"] %></strong>
+              <span><%= group["count"] %> photo<%= group["count"] == 1 ? "" : "s" %></span>
+            </div>
+            <div class="admin-group-meta">
+              <span><%= group["complete_pack_count"] %> full pack<%= group["complete_pack_count"] == 1 ? "" : "s" %></span>
+              <% if group["remainder_count"] > 0 %>
+                <span><%= group["remainder_count"] %> waiting for the next pack</span>
+              <% else %>
+                <span>Pack-ready</span>
+              <% end %>
+            </div>
+            <div class="tag-list">
+              <% group["photos"].first(4).each do |photo| %>
+                <span class="tag-chip"><%= photo_label(photo) %></span>
+              <% end %>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <div class="section-title admin-section-title">
+      <div>
+        <span class="eyebrow">Recent photos</span>
+        <h2>Latest files from Drive</h2>
+      </div>
+      <p>
+        A quick visual check of what the app is currently reading from the folder.
+      </p>
+    </div>
+
+    <% if @recent_photos.empty? %>
+      <p class="empty">No photos available yet.</p>
+    <% else %>
+      <div class="admin-photo-grid">
+        <% @recent_photos.each do |photo| %>
+          <article class="admin-photo-card">
+            <div class="admin-photo-thumb">
+              <img src="<%= photo_thumbnail_url(photo) %>" alt="<%= photo_label(photo) %>" loading="lazy" referrerpolicy="no-referrer">
+            </div>
+            <div class="admin-photo-copy">
+              <strong><%= photo_label(photo) %></strong>
+              <span><%= formatted_timestamp(photo["modified_time"]) || "Unknown date" %></span>
+              <span class="hint">Primary group: <%= primary_group_tag(photo).split.map(&:capitalize).join(" ") %></span>
+              <% if photo_short_tags(photo).any? %>
+                <div class="tag-list">
+                  <% photo_short_tags(photo).each do |tag| %>
+                    <span class="tag-chip"><%= tag %></span>
+                  <% end %>
+                </div>
+              <% else %>
+                <span class="hint">No tags yet</span>
+              <% end %>
+              <a href="<%= photo_view_url(photo) %>" target="_blank" rel="noreferrer">Open in Drive</a>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="panel">
+    <div class="section-title admin-section-title">
+      <div>
+        <span class="eyebrow">Recent members</span>
+        <h2>Latest Google sign-ins</h2>
+      </div>
+      <p>
+        This gives you a tiny admin view of who has entered the vault so far.
+      </p>
+    </div>
+
+    <% if @recent_members.empty? %>
+      <p class="empty">No members have signed in yet.</p>
+    <% else %>
+      <div class="admin-member-list">
+        <% @recent_members.each do |member| %>
+          <article class="admin-member-row">
+            <div class="admin-member-identity">
+              <% if member["image"].to_s != "" %>
+                <img class="admin-member-avatar" src="<%= member["image"] %>" alt="<%= member["name"] %>">
+              <% end %>
+              <div>
+                <strong><%= member["name"] %></strong>
+                <span><%= member["email"] %></span>
+              </div>
+            </div>
+            <div class="admin-member-meta">
+              <span>Last login</span>
+              <strong><%= formatted_timestamp(member["last_login_at"]) || "Unknown" %></strong>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+</section>

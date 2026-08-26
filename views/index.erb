@@ -1,0 +1,268 @@
+<section class="hero hero-stack">
+  <% if signed_in? %>
+    <div class="hero-copy">
+      <span class="eyebrow">Vault unlocked</span>
+      <h1>KlyoVault is open, <%= current_user_first_name %>.</h1>
+      <p class="lede">
+        This is the first real game-shaped screen: your account is active, the Drive collection is live,
+        and we can now build reveals, rarity, and progression on top of one clear player lobby.
+      </p>
+
+      <div class="cta-row">
+        <a class="button button-primary" href="/packs">Open packs</a>
+        <a class="button button-secondary" href="#vault-lobby">View today&apos;s lobby</a>
+      </div>
+
+      <% if configured? && !@photos.empty? %>
+        <div class="stats-row">
+          <div class="stat-card">
+            <strong><%= @photos.length %></strong>
+            <span>photos loaded live</span>
+          </div>
+          <div class="stat-card">
+            <strong><%= vault_member_count %></strong>
+            <span>signed-in members saved</span>
+          </div>
+          <div class="stat-card">
+            <strong><%= grouping_summary["tag_group_count"] %></strong>
+            <span>tag groups detected</span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="panel callout">
+      <h2>What this lobby unlocks</h2>
+      <div class="feature-list">
+        <div class="feature-item">
+          <strong>Real accounts</strong>
+          <span>Every session now belongs to a Google user we can build game state on top of later.</span>
+        </div>
+        <div class="feature-item">
+          <strong>Player home screen</strong>
+          <span>We now have a natural place for daily tries, reveal entry points, collection stats, and future rewards.</span>
+        </div>
+        <div class="feature-item">
+          <strong>Reusable grouping service</strong>
+          <span>Tag-based grouping is now computed from one shared service we can reuse for admin tools and gameplay.</span>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <section class="vault-entry-shell">
+      <section class="vault-entry-copy">
+        <div class="vault-entry-label">
+          <span class="vault-entry-lock" aria-hidden="true"></span>
+          <span>Private photo vault game</span>
+        </div>
+
+        <h1 class="vault-entry-headline">
+          Enter the
+          <span>Klyova</span>
+          vault.
+        </h1>
+
+        <p class="vault-entry-summary">
+          Sign in with Google to reveal daily photo packs from Klyova’s collection.
+        </p>
+
+        <% if google_login_configured? %>
+          <div class="vault-entry-actions">
+            <a class="vault-entry-signin" href="/auth/google_oauth2">
+              <span class="vault-entry-signin-kicker">Google access</span>
+              <span>Sign in with Google</span>
+            </a>
+          </div>
+        <% else %>
+          <div class="entry-inline-note">
+            <strong>Google login setup needed</strong>
+            <p>
+              Add <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, and <code>SESSION_SECRET</code>
+              to enable the entry flow.
+            </p>
+          </div>
+        <% end %>
+      </section>
+
+      <section class="vault-entry-visual" aria-hidden="true">
+        <div class="vault-entry-orb vault-entry-orb-large"></div>
+        <div class="vault-entry-orb vault-entry-orb-small"></div>
+
+        <div class="vault-entry-serial">
+          KLYO
+          <br>
+          VLT
+          <br>
+          001
+        </div>
+
+        <div class="vault-entry-status-card">
+          <span><strong>SYS.STATUS:</strong> OPTIMAL</span>
+          <span><strong>ENCRYPTION:</strong> AES-256</span>
+        </div>
+      </section>
+    </section>
+
+    <% unless configured? %>
+      <div class="panel callout">
+        <h2>Google Drive setup needed</h2>
+        <p>
+          Add <code>GOOGLE_DRIVE_API_KEY</code> and <code>GOOGLE_DRIVE_FOLDER_ID</code>,
+          then restart the app.
+        </p>
+        <p class="hint">
+          This version expects a Drive folder that the current API setup can read.
+        </p>
+      </div>
+    <% end %>
+
+    <% if @auth_error %>
+      <div class="panel callout callout-error">
+        <h2>Google sign-in failed</h2>
+        <p><%= @auth_error %></p>
+      </div>
+    <% end %>
+
+    <% if @load_error %>
+      <div class="panel callout callout-error">
+        <h2>Could not load the folder</h2>
+        <p><%= @load_error %></p>
+        <p class="hint">
+          The most common causes are a wrong folder ID, an invalid API key, or a folder that is not accessible with the current auth setup.
+        </p>
+      </div>
+    <% end %>
+
+    <div class="vault-entry-marquee" aria-hidden="true">
+      <div class="vault-entry-marquee-track">
+        <span>SECURE VAULT ACCESS</span>
+        <span>*</span>
+        <span>UNAUTHORIZED ACCESS PROHIBITED</span>
+        <span>*</span>
+        <span>V 2.4.9</span>
+        <span>*</span>
+        <span>SECURE VAULT ACCESS</span>
+        <span>*</span>
+        <span>UNAUTHORIZED ACCESS PROHIBITED</span>
+        <span>*</span>
+        <span>V 2.4.9</span>
+        <span>*</span>
+        <span>SECURE VAULT ACCESS</span>
+        <span>*</span>
+        <span>UNAUTHORIZED ACCESS PROHIBITED</span>
+        <span>*</span>
+        <span>V 2.4.9</span>
+      </div>
+    </div>
+  <% end %>
+</section>
+
+<% if signed_in? %>
+  <section class="lobby-grid" id="vault-lobby">
+    <article class="lobby-main panel">
+      <span class="eyebrow">Vault lobby</span>
+      <h2>Start from today&apos;s run</h2>
+      <p class="lede">
+        We haven&apos;t decided the final reveal structure yet, so this is the cleanest game entry point for now:
+        show the player their daily energy, collection state, and a single clear action.
+      </p>
+
+      <div class="lobby-highlight-row">
+        <div class="highlight-card highlight-card-strong">
+          <span class="highlight-label">Today&apos;s tries</span>
+          <strong><%= daily_tries_remaining %>/<%= daily_tries_total %></strong>
+          <span class="highlight-note">Fresh for <%= Time.now.strftime("%A, %B %-d, %Y") %></span>
+        </div>
+        <div class="highlight-card">
+          <span class="highlight-label">Best find</span>
+          <strong><%= best_find_label %></strong>
+          <span class="highlight-note">Rarity and scoring come next</span>
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <a class="button button-primary" href="/packs">Browse grouped packs</a>
+        <% if ENV["GOOGLE_DRIVE_FOLDER_ID"].to_s.strip != "" %>
+          <a class="button button-secondary" href="https://drive.google.com/drive/folders/<%= ENV["GOOGLE_DRIVE_FOLDER_ID"] %>" target="_blank" rel="noreferrer">Open source folder</a>
+        <% end %>
+      </div>
+    </article>
+
+    <aside class="lobby-stack">
+      <div class="panel lobby-side-card">
+        <span class="eyebrow">Collection progress</span>
+        <div class="metric-list">
+          <div class="metric-row">
+            <span>Photos loaded</span>
+            <strong><%= @photos.length %></strong>
+          </div>
+          <div class="metric-row">
+            <span>Revealed so far</span>
+            <strong><%= collection_unlocked_count %></strong>
+          </div>
+          <div class="metric-row">
+            <span>Completion</span>
+            <strong><%= collection_completion_percent %>%</strong>
+          </div>
+          <div class="metric-row">
+            <span>Tag groups</span>
+            <strong><%= grouping_summary["tag_group_count"] %></strong>
+          </div>
+          <div class="metric-row">
+            <span>Playable packs</span>
+            <strong><%= grouping_summary["complete_pack_count"] %></strong>
+          </div>
+          <div class="metric-row">
+            <span>Login streak</span>
+            <strong><%= streak_label %></strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel lobby-side-card">
+        <span class="eyebrow">Tag grouping</span>
+        <p>
+          Tags now feed one shared grouping engine. It builds <strong><%= grouping_summary["tag_group_count"] %></strong>
+          tag groups and <strong><%= grouping_summary["pack_count"] %></strong> total packs of <strong><%= grouping_pack_size %></strong>
+          from the current collection.
+        </p>
+        <p class="hint">
+          The grouped pack flow is now ready as the main player path, while the raw wall below stays available as a fallback view.
+        </p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="section-title" id="photo-wall">
+    <div>
+      <span class="eyebrow">Photo wall</span>
+      <h2>Live photos from the configured Drive folder</h2>
+    </div>
+    <p>
+      We’re keeping this intentionally simple for now: one signed-in feed, no grouping decision yet, and a clean base for the next game layer.
+    </p>
+  </section>
+
+  <% if configured? && @photos.empty? && !@load_error %>
+    <div class="panel">
+      <p class="empty">No images were found in the configured folder yet.</p>
+    </div>
+  <% elsif !@photos.empty? %>
+    <section class="photo-wall">
+      <% @photos.each do |photo| %>
+        <a class="wall-card" href="/photos/<%= photo["id"] %>">
+          <div class="wall-image-frame">
+            <img src="<%= photo_thumbnail_url(photo) %>" alt="<%= photo_label(photo) %>" loading="lazy" referrerpolicy="no-referrer">
+          </div>
+          <div class="wall-card-copy">
+            <strong><%= photo_label(photo) %></strong>
+            <span>Google Drive photo</span>
+            <% if formatted_timestamp(photo["modified_time"]) %>
+              <small>Updated <%= formatted_timestamp(photo["modified_time"]) %></small>
+            <% end %>
+          </div>
+        </a>
+      <% end %>
+    </section>
+  <% end %>
+<% end %>

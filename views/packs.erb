@@ -1,0 +1,112 @@
+<main class="collection-page">
+  <section class="collection-hero">
+    <div class="collection-hero-copy">
+      <span class="collection-kicker">Klyova collection / <%= Time.now.strftime("%d.%m.%Y") %></span>
+      <h1>Choose your<br>next reveal.</h1>
+      <p>
+        Every pack holds <%= grouping_pack_size %> photos. Pick one, spend a daily reveal,
+        and see what class your photo becomes.
+      </p>
+    </div>
+
+    <aside class="collection-daily-card">
+      <span class="collection-daily-label">Daily reveals</span>
+      <strong class="<%= "is-long" if daily_tries_remaining >= 1_000 %>"><%= daily_tries_remaining %><small>/ <%= daily_tries_total %></small></strong>
+      <div class="collection-try-dots" aria-label="<%= daily_tries_remaining %> of <%= daily_tries_total %> reveals remaining">
+        <% [daily_tries_total, 8].min.times do |index| %>
+          <% available_threshold = daily_tries_total.zero? ? 0 : (daily_tries_remaining.to_f / daily_tries_total * [daily_tries_total, 8].min).ceil %>
+          <span class="<%= "is-available" if index < available_threshold %>"></span>
+        <% end %>
+      </div>
+      <p><%= daily_tries_remaining.positive? ? "Choose carefully. Each reveal is yours for today." : "That’s today’s run. Come back tomorrow." %></p>
+    </aside>
+  </section>
+
+  <section class="collection-summary" aria-label="Collection summary">
+    <div>
+      <span>Packs</span>
+      <strong><%= @packs.length %></strong>
+    </div>
+    <div>
+      <span>Ready</span>
+      <strong><%= @grouping_summary["complete_pack_count"] %></strong>
+    </div>
+    <div>
+      <span>Photos found</span>
+      <strong><%= collection_unlocked_count %></strong>
+    </div>
+    <div class="collection-summary-note">
+      <span>Today’s objective</span>
+      <strong>Find something impossible.</strong>
+    </div>
+  </section>
+
+  <% if @load_error %>
+    <div class="collection-message collection-message-error">
+      <strong>Collection unavailable</strong>
+      <span><%= @load_error %></span>
+    </div>
+  <% elsif @packs.empty? %>
+    <div class="collection-message">
+      <strong>No packs yet</strong>
+      <span>Tag a few photos in Admin and the first collection will appear here.</span>
+    </div>
+  <% else %>
+    <div class="collection-section-head">
+      <div>
+        <span>Available now</span>
+        <h2>The collection</h2>
+      </div>
+      <p><%= @packs.length %> packs generated from Klyova’s photo tags.</p>
+    </div>
+
+    <section class="collection-grid">
+      <% @packs.each_with_index do |pack, pack_index| %>
+        <% revealed_photos = pack["photos"].select { |photo| photo_revealed_in_pack?(photo, pack) } %>
+        <% revealed_count = revealed_photos.length %>
+        <% complete = pack_complete_for_user?(pack) %>
+        <% ready = pack_ready_to_play?(pack) %>
+        <a class="collection-pack <%= "is-complete" if complete %> <%= "is-growing" unless ready %>" href="/packs/<%= pack["id"] %>">
+          <div class="collection-pack-topline">
+            <span>Pack <%= format("%02d", pack_index + 1) %></span>
+            <span><%= complete ? "Complete" : ready ? "Ready" : "Growing" %></span>
+          </div>
+
+          <div class="collection-pack-stage">
+            <% grouping_pack_size.times do |slot_index| %>
+              <% photo = pack["photos"][slot_index] %>
+              <% revealed = photo && photo_revealed_in_pack?(photo, pack) %>
+              <div class="collection-pack-slot slot-<%= slot_index + 1 %> <%= "is-revealed" if revealed %> <%= "is-empty" unless photo %>">
+                <% if revealed %>
+                  <img src="<%= photo_thumbnail_url(photo) %>" alt="<%= photo_label(photo) %>" loading="lazy" referrerpolicy="no-referrer">
+                  <% if photo_rarity_label(photo) %>
+                    <span class="collection-slot-rarity"><%= photo_rarity_label(photo) %></span>
+                  <% end %>
+                <% else %>
+                  <span class="collection-slot-number"><%= format("%02d", slot_index + 1) %></span>
+                  <span class="collection-slot-lock" aria-hidden="true"></span>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="collection-pack-copy">
+            <div>
+              <span class="collection-pack-tag">#<%= pack["primary_tag"].downcase.gsub(/[^a-z0-9]+/, "-") %></span>
+              <h3><%= pack["label"] %></h3>
+            </div>
+            <div class="collection-pack-progress">
+              <span><%= revealed_count %>/<%= pack["count"] %> found</span>
+              <div><i style="width: <%= pack["count"].positive? ? (revealed_count.to_f / pack["count"] * 100).round : 0 %>%"></i></div>
+            </div>
+          </div>
+
+          <div class="collection-pack-action">
+            <span><%= complete ? "View completed pack" : ready ? "Enter pack" : "View progress" %></span>
+            <strong aria-hidden="true">↗</strong>
+          </div>
+        </a>
+      <% end %>
+    </section>
+  <% end %>
+</main>

@@ -1,0 +1,70 @@
+<section class="detail-shell">
+  <article class="detail-photo photo-frame">
+    <img src="<%= photo_url(@photo) %>" alt="<%= photo_label(@photo) %>" referrerpolicy="no-referrer">
+  </article>
+
+  <aside class="stack detail-sidebar">
+    <div class="panel">
+      <span class="eyebrow">Photo check</span>
+      <h1><%= photo_label(@photo) %></h1>
+      <p class="lede">
+        This photo is unlocked for your account. The rarity and score are now tied to your own reveal event, so another player can open the same photo with a different class.
+      </p>
+      <% if photo_rarity_label(@photo) %>
+        <div class="detail-reward-row">
+          <span class="rarity-pill rarity-pill-<%= photo_rarity_key(@photo) %>"><%= photo_rarity_label(@photo) %></span>
+          <strong><%= photo_reveal_score(@photo) %> points</strong>
+        </div>
+      <% end %>
+    </div>
+
+    <% if winning_photo?(@photo) %>
+      <div class="panel winner-panel">
+        <span class="eyebrow">Winning photo</span>
+        <h2>You found the current winner.</h2>
+        <p>
+          Right now the prototype reveals it immediately. In the next step, we can gate this behind
+          a claim flow or answer submission.
+        </p>
+      </div>
+    <% else %>
+      <div class="panel loser-panel">
+        <span class="eyebrow">Keep looking</span>
+        <h2>This one isn’t the winner.</h2>
+        <p>
+          The idea works: one photo is chosen behind the scenes and every other photo is a miss.
+        </p>
+      </div>
+    <% end %>
+
+    <div class="panel">
+      <h3>Photo metadata</h3>
+      <div class="meta-list">
+        <div>
+          <span class="meta-label">Drive ID</span>
+          <code><%= @photo["id"] %></code>
+        </div>
+        <% if formatted_timestamp(@photo["modified_time"]) %>
+          <div>
+            <span class="meta-label">Updated</span>
+            <strong><%= formatted_timestamp(@photo["modified_time"]) %></strong>
+          </div>
+        <% end %>
+        <% if @photo["width"] && @photo["height"] %>
+          <div>
+            <span class="meta-label">Size</span>
+            <strong><%= @photo["width"] %> × <%= @photo["height"] %></strong>
+          </div>
+        <% end %>
+      </div>
+      <div class="cta-row">
+        <% if @pack %>
+          <a class="button button-secondary" href="/packs/<%= @pack["id"] %>">Back to pack</a>
+        <% else %>
+          <a class="button button-secondary" href="/packs">Back to packs</a>
+        <% end %>
+        <a class="button button-secondary" href="<%= photo_view_url(@photo) %>" target="_blank" rel="noreferrer">Open in Drive</a>
+      </div>
+    </div>
+  </aside>
+</section>

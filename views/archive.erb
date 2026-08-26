@@ -1,0 +1,27 @@
+<section>
+  <div class="section-title">
+    <div>
+      <span class="eyebrow">Archive</span>
+      <h1>All published days</h1>
+    </div>
+    <p>Reverse chronological cards keep the browsing model simple and obvious.</p>
+  </div>
+
+  <% if @entries.empty? %>
+    <div class="panel">
+      <p class="empty">No published photos yet.</p>
+    </div>
+  <% else %>
+    <div class="archive-grid">
+      <% @entries.each do |entry| %>
+        <a class="photo-card" href="/photos/<%= entry["date"] %>">
+          <img src="<%= image_src(entry) %>" alt="<%= entry["caption"] %>">
+          <div class="photo-card-copy">
+            <div class="photo-date"><%= formatted_date(entry["date"]) %></div>
+            <strong><%= entry["caption"] %></strong>
+          </div>
+        </a>
+      <% end %>
+    </div>
+  <% end %>
+</section>
